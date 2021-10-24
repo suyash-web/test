@@ -10,9 +10,7 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model import Response
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager
+import requests
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -64,22 +62,21 @@ class RPAtaskIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("RPAtaskIntent")(handler_input)
     def handle(self, handler_input):
+        url = "https://api.eu1.robocorp.com/process-v1/workspaces/dc3c3305-e724-4b8d-a150-f67bb5d8e2a3/processes/512bea4b-6b5d-4393-9828-28f8c0acae48/runs/dfd14d13-926b-48d3-b622-72d4aef8f704/robotRuns/$robotRunId?"
         slots = handler_input.request_envelope.request.intent.slots
-        actions = slots['action'].value
-        if actions.lower() == "run" or actions.lower() == "open" or actions.lower() == "play" or actions.lower() == "execute":
-            driver = webdriver.Chrome(ChromeDriverManager().install())
-            driver.get("https://python.org")
-            #print(driver.title)
-            search_bar = driver.find_element_by_name("q")
-            search_bar.clear()
-            search_bar.send_keys("getting started with python")
-            search_bar.send_keys(Keys.RETURN)
-            #print(driver.current_url)
-            driver.close()
-            speak_output = "I have opend up the browser for you!"
-            return handler_input.response_builder.speak(speak_output).response
-
-
+        action_type = slots['action'].value
+        if action_type.lower() == "run" or action_type.lower() == "play" or action_type.lower() == "execute":
+            response = requests.get(url)
+            if response.status_code == 200:
+                speak_output = "Success"
+            elif response.status_code == 404:
+                speak_output = "Not Found"
+        return (
+                handler_input.response_builder
+                .speak(speak_output)
+                # .ask("add a reprompt if you want to keep the session open for the user to respond")
+                .response
+            )
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
     def can_handle(self, handler_input):
